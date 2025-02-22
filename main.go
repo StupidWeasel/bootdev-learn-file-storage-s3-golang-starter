@@ -1,35 +1,45 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/bootdotdev/learn-file-storage-s3-golang-starter/internal/database"
-	"github.com/google/uuid"
-
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
+	"github.com/stupidweasel/learn-file-storage-s3-golang-starter/internal/database"
 )
 
 type apiConfig struct {
-	db               database.Client
-	jwtSecret        string
-	platform         string
-	filepathRoot     string
-	assetsRoot       string
-	s3Bucket         string
-	s3Region         string
-	s3CfDistribution string
-	port             string
+	db                    database.Client
+	ctx                   context.Context
+	jwtSecret             string
+	platform              string
+	filepathRoot          string
+	assetsRoot            string
+	s3Client              *s3.Client
+	s3Bucket              string
+	s3Region              string
+	s3CfDistribution      string
+	port                  string
+	allowedThumbnailMimes map[string]string
+	allowedVideoMimes     map[string]string
 }
 
-type thumbnail struct {
-	data      []byte
-	mediaType string
-}
+// type thumbnail struct {
+// 	data      []byte
+// 	mediaType string
+// }
 
-var videoThumbnails = map[uuid.UUID]thumbnail{}
+// var videoThumbnails = map[uuid.UUID]thumbnail{}
+//
+
+const (
+	VideoMaxUploadSize = 1 << 30
+)
 
 func main() {
 	godotenv.Load(".env")
@@ -84,16 +94,45 @@ func main() {
 		log.Fatal("PORT environment variable is not set")
 	}
 
+	// ctx, cancel := context.WithCancel(context.Background())
+	// defer cancel()
+
+	// go func() {
+	// 	sigChan := make(chan os.Signal, 1)
+	// 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	// 	<-sigChan
+	// 	cancel()
+	// }()
+
+	ctx := context.Background()
+	s3Config, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(s3Region),
+	)
+
+	if err != nil {
+		log.Fatalf("Could not load s3 config: %v", err)
+	}
+	s3Client := s3.NewFromConfig(s3Config)
+
 	cfg := apiConfig{
 		db:               db,
+		ctx:              ctx,
 		jwtSecret:        jwtSecret,
 		platform:         platform,
 		filepathRoot:     filepathRoot,
 		assetsRoot:       assetsRoot,
+		s3Client:         s3Client,
 		s3Bucket:         s3Bucket,
 		s3Region:         s3Region,
 		s3CfDistribution: s3CfDistribution,
 		port:             port,
+		allowedThumbnailMimes: map[string]string{
+			"image/jpeg": "jpg",
+			"image/png":  "png",
+		},
+		allowedVideoMimes: map[string]string{
+			"video/mp4": "mp4",
+		},
 	}
 
 	err = cfg.ensureAssetsDir()
@@ -106,7 +145,7 @@ func main() {
 	mux.Handle("/app/", appHandler)
 
 	assetsHandler := http.StripPrefix("/assets", http.FileServer(http.Dir(assetsRoot)))
-	mux.Handle("/assets/", cacheMiddleware(assetsHandler))
+	mux.Handle("/assets/", noCacheMiddleware(assetsHandler))
 
 	mux.HandleFunc("POST /api/login", cfg.handlerLogin)
 	mux.HandleFunc("POST /api/refresh", cfg.handlerRefresh)
@@ -119,7 +158,7 @@ func main() {
 	mux.HandleFunc("POST /api/video_upload/{videoID}", cfg.handlerUploadVideo)
 	mux.HandleFunc("GET /api/videos", cfg.handlerVideosRetrieve)
 	mux.HandleFunc("GET /api/videos/{videoID}", cfg.handlerVideoGet)
-	mux.HandleFunc("GET /api/thumbnails/{videoID}", cfg.handlerThumbnailGet)
+	// mux.HandleFunc("GET /api/thumbnails/{videoID}", cfg.handlerThumbnailGet)
 	mux.HandleFunc("DELETE /api/videos/{videoID}", cfg.handlerVideoMetaDelete)
 
 	mux.HandleFunc("POST /admin/reset", cfg.handlerReset)

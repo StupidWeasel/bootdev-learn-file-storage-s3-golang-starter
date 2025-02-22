@@ -1,3 +1,15 @@
+# Boot.dev -- 19. Learn File Servers and CDNs
+
+![Go Gopher looking stylish](https://storage.googleapis.com/qvault-webapp-dynamic-assets/course_assets/3elNhQu.png)
+
+My work as part of the boot.dev Learn File Servers and CDNs course.
+
+[Check out boot.dev (with a referal from me)](https://wzl.to/boot.dev)  ***-or-*** [Check it out, without a referal](https://wzl.to/boot.dev_noref)
+
+This is a fork of [github.com/bootdotdev/learn-file-storage-s3-golang-starter](https://github.com/bootdotdev/learn-file-storage-s3-golang-starter).
+
+---
+
 # learn-file-storage-s3-golang-starter (Tubely)
 
 This repo contains the starter code for the Tubely application - the #1 tool for engagement bait - for the "Learn File Servers and CDNs with S3 and CloudFront" [course](https://www.boot.dev/courses/learn-file-servers-s3-cloudfront-golang) on [boot.dev](https://www.boot.dev)
