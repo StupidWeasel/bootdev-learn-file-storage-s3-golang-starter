@@ -126,6 +126,7 @@ func (cfg *apiConfig) handlerVideosRetrieve(w http.ResponseWriter, r *http.Reque
 		videos[i], err = cfg.dbVideoToSignedVideo(video)
 		if err != nil {
 			respondWithError(w, http.StatusInternalServerError, "Unable to get signed url", fmt.Errorf("video id: %s, error: %v", video.ID.String(), err))
+			return
 		}
 	}
 
