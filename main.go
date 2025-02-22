@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
@@ -24,6 +25,7 @@ type apiConfig struct {
 	s3Bucket              string
 	s3Region              string
 	s3CfDistribution      string
+	presignedExpireTime   time.Duration
 	port                  string
 	allowedThumbnailMimes map[string]string
 	allowedVideoMimes     map[string]string
@@ -115,17 +117,18 @@ func main() {
 	s3Client := s3.NewFromConfig(s3Config)
 
 	cfg := apiConfig{
-		db:               db,
-		ctx:              ctx,
-		jwtSecret:        jwtSecret,
-		platform:         platform,
-		filepathRoot:     filepathRoot,
-		assetsRoot:       assetsRoot,
-		s3Client:         s3Client,
-		s3Bucket:         s3Bucket,
-		s3Region:         s3Region,
-		s3CfDistribution: s3CfDistribution,
-		port:             port,
+		db:                  db,
+		ctx:                 ctx,
+		jwtSecret:           jwtSecret,
+		platform:            platform,
+		filepathRoot:        filepathRoot,
+		assetsRoot:          assetsRoot,
+		s3Client:            s3Client,
+		s3Bucket:            s3Bucket,
+		s3Region:            s3Region,
+		s3CfDistribution:    s3CfDistribution,
+		presignedExpireTime: time.Duration(time.Hour * 6),
+		port:                port,
 		allowedThumbnailMimes: map[string]string{
 			"image/jpeg": "jpg",
 			"image/png":  "png",
