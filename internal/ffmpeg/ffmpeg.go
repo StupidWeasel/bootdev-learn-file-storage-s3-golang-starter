@@ -13,13 +13,13 @@ func ProcessVideoForFastStart(filePath string) (string, error) {
 	target, err := os.Stat(filePath)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return "", errors.New("Error, that file does not exist")
+			return "", errors.New("that file does not exist")
 		}
-		return "", errors.New("Error, unable to stat that filepath")
+		return "", errors.New("unable to stat that filepath")
 	}
 
 	if target.IsDir() {
-		return "", errors.New("Error, that is a directory, expecting a file")
+		return "", errors.New("that is a directory, expecting a file")
 	}
 
 	processingFile := fmt.Sprintf("%s.processing", filePath)
@@ -34,7 +34,7 @@ func ProcessVideoForFastStart(filePath string) (string, error) {
 	err = cmd.Run()
 	if err != nil {
 		os.Remove(processingFile)
-		return "", fmt.Errorf("Error running ffmpeg command: %v", err)
+		return "", fmt.Errorf("failed on ffmpeg command: %v", err)
 	}
 
 	ext := filepath.Ext(filePath)
@@ -44,7 +44,7 @@ func ProcessVideoForFastStart(filePath string) (string, error) {
 	err = os.Rename(processingFile, newPath)
 	if err != nil {
 		os.Remove(processingFile)
-		return "", fmt.Errorf("Error renaming file: %v", err)
+		return "", fmt.Errorf("cannot rename file: %v", err)
 	}
 
 	return newPath, nil

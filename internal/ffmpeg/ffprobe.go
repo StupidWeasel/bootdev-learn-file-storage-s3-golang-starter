@@ -94,22 +94,22 @@ func FfprobeVideo(filepath string) (ffprobeResult, error) {
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
-		return ffprobeResult{}, fmt.Errorf("Error creating stdout pipe: %v", err)
+		return ffprobeResult{}, fmt.Errorf("unable to create stdout pipe: %v", err)
 	}
 
 	if err := cmd.Start(); err != nil {
-		return ffprobeResult{}, fmt.Errorf("Error starting command: %v", err)
+		return ffprobeResult{}, fmt.Errorf("unable to start command: %v", err)
 	}
 
 	var result ffprobeResult
 	decoder := json.NewDecoder(stdout)
 
 	if err := decoder.Decode(&result); err != nil {
-		return ffprobeResult{}, fmt.Errorf("Error decoding json: %v", err)
+		return ffprobeResult{}, fmt.Errorf("can't decode json: %v", err)
 	}
 
 	if err := cmd.Wait(); err != nil {
-		return ffprobeResult{}, fmt.Errorf("Error waiting for command: %v", err)
+		return ffprobeResult{}, fmt.Errorf("waiting for command failed: %v", err)
 	}
 
 	return result, nil
