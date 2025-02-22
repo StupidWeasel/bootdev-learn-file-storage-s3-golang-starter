@@ -20,7 +20,7 @@ func aspectRatio(width, height int) float64 {
 	return float64(width) / float64(height)
 }
 
-func getVideoAspectRadio(filepath string) (string, error) {
+func getVideoAspectRatio(filepath string) (string, error) {
 
 	target, err := os.Stat(filepath)
 	if err != nil {
