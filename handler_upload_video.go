@@ -14,6 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/google/uuid"
 	"github.com/stupidweasel/learn-file-storage-s3-golang-starter/internal/auth"
+	"github.com/stupidweasel/learn-file-storage-s3-golang-starter/internal/ffmpeg"
 )
 
 func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request) {
@@ -106,12 +107,6 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	_, err = tempFile.Seek(0, io.SeekStart)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Unable to seek to start of temp file", err)
-		return
-	}
-
 	prefix, err := getVideoAspectRatio(tempFile.Name())
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Unable to get video aspect ratio", err)
@@ -120,10 +115,25 @@ func (cfg *apiConfig) handlerUploadVideo(w http.ResponseWriter, r *http.Request)
 
 	thisKey := fmt.Sprintf("%s/%s.%s", prefix, generateRandomKey(32), ext)
 
+	fastStartPath, err := ffmpeg.ProcessVideoForFastStart(tempFile.Name())
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not create faststart version of video", err)
+		return
+	}
+
+	fastStartFile, err := os.Open(fastStartPath)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Could not open faststart video", err)
+		return
+	}
+	defer os.Remove(fastStartFile.Name())
+	defer fastStartFile.Close()
+	tempFile.Close()
+
 	params := s3.PutObjectInput{
 		Bucket:      aws.String(cfg.s3Bucket),
 		Key:         aws.String(thisKey),
-		Body:        tempFile,
+		Body:        fastStartFile,
 		ContentType: aws.String(fileType),
 	}
 
