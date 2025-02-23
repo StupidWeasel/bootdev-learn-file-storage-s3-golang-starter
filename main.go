@@ -27,6 +27,7 @@ type apiConfig struct {
 	s3CfDistribution      string
 	presignedExpireTime   time.Duration
 	port                  string
+	cfRoot                string
 	allowedThumbnailMimes map[string]string
 	allowedVideoMimes     map[string]string
 }
@@ -96,6 +97,14 @@ func main() {
 		log.Fatal("PORT environment variable is not set")
 	}
 
+	cfRoot := os.Getenv("CFROOT")
+	switch cfRoot {
+	case "":
+		log.Fatal("CFROOT environment variable is not set")
+	case "https://root.cloudfront.net":
+		log.Fatal("CFROOT environment incorrectly set")
+	}
+
 	// ctx, cancel := context.WithCancel(context.Background())
 	// defer cancel()
 
@@ -129,6 +138,7 @@ func main() {
 		s3CfDistribution:    s3CfDistribution,
 		presignedExpireTime: time.Duration(time.Hour * 6),
 		port:                port,
+		cfRoot:              cfRoot,
 		allowedThumbnailMimes: map[string]string{
 			"image/jpeg": "jpg",
 			"image/png":  "png",
